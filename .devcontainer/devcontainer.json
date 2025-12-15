@@ -1,18 +1,14 @@
 {
-  "name": "Salud Laboral Stack",
-  "dockerComposeFile": "../docker-compose.yml",
-  "service": "app",
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-
-  // ESTA ES LA PARTE QUE TE FALTABA PARA TENER DOCKER
+  "name": "Salud Laboral Env",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20-bullseye",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "version": "latest",
       "enableNonRootDocker": "true",
-      "moby": "true"
+      "moby": "true",
+      "dockerDashComposeVersion": "v2"
     }
   },
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -23,9 +19,6 @@
       ]
     }
   },
-
   "forwardPorts": [3000, 5432, 5678, 5555],
-  
-  // Esto instala las dependencias automáticamente al reconstruir
   "postCreateCommand": "npm install && npx prisma generate"
 }
