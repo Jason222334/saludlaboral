@@ -1,10 +1,18 @@
 {
   "name": "Salud Laboral Stack",
   "dockerComposeFile": "../docker-compose.yml",
-  "service": "app", // Esto asume que agregaremos un servicio 'app' en el docker-compose, ver paso 2
+  "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  
-  // Extensiones útiles para VS Code en la nube
+
+  // ESTA ES LA PARTE QUE TE FALTABA PARA TENER DOCKER
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true",
+      "moby": "true"
+    }
+  },
+
   "customizations": {
     "vscode": {
       "extensions": [
@@ -16,9 +24,8 @@
     }
   },
 
-  // Puertos que se deben reenviar automáticamente
   "forwardPorts": [3000, 5432, 5678, 5555],
-
-  // Comandos a ejecutar cuando se crea el contenedor
+  
+  // Esto instala las dependencias automáticamente al reconstruir
   "postCreateCommand": "npm install && npx prisma generate"
 }
