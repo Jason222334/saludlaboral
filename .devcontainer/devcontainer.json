@@ -1,0 +1,24 @@
+{
+  "name": "Salud Laboral Stack",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "app", // Esto asume que agregaremos un servicio 'app' en el docker-compose, ver paso 2
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  
+  // Extensiones útiles para VS Code en la nube
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Vue.volar",
+        "Prisma.prisma",
+        "esbenp.prettier-vscode",
+        "humao.rest-client"
+      ]
+    }
+  },
+
+  // Puertos que se deben reenviar automáticamente
+  "forwardPorts": [3000, 5432, 5678, 5555],
+
+  // Comandos a ejecutar cuando se crea el contenedor
+  "postCreateCommand": "npm install && npx prisma generate"
+}

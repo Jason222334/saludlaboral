@@ -1,0 +1,276 @@
+  generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- PEGA AQUÍ LOS MODELOS ---
+
+model Clinica {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  ruc       String   @unique
+  direccion String?
+  telefono  String?
+  email     String?
+  logo_url  String?
+  created_at DateTime @default(now())
+}
+
+model Role {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String?
+  usuarios    Usuario[]
+}
+
+model Usuario {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  email         String    @unique
+  password_hash String
+  nombre        String
+  apellido      String
+  dni           String    @unique
+  telefono      String?
+  rol_id        Int?
+  rol           Role?     @relation(fields: [rol_id], references: [id])
+  activo        Boolean   @default(true)
+  created_at    DateTime  @default(now())
+  
+  admisiones_registradas Admision[]
+  historias_clinicas     HistoriaClinica[]
+  examenes_asignados     AdmisionExamen[]
+  resultados_lab         LaboratorioResultado[]
+  conceptos_aptitud      ConceptoAptitud[]
+  pagos_registrados      Pago[]
+  movimientos_inv        MovimientoInventario[]
+  logs                   LogSistema[]
+}
+
+model Empresa {
+  id           Int        @id @default(autoincrement())
+  ruc          String     @unique
+  razon_social String
+  direccion    String?
+  telefono     String?
+  email        String?
+  contacto     String?
+  pacientes    Paciente[]
+  admisiones   Admision[]
+  facturas     Factura[]
+}
+
+model Paciente {
+  id               Int               @id @default(autoincrement())
+  dni              String            @unique
+  nombre           String
+  apellido         String
+  fecha_nacimiento DateTime
+  sexo             String
+  telefono         String?
+  email            String?
+  direccion        String?
+  empresa_id       Int?
+  empresa          Empresa?          @relation(fields: [empresa_id], references: [id])
+  huella_dactilar  Bytes?
+  admisiones       Admision[]
+  historia_clinica HistoriaClinica[]
+}
+
+model TipoExamen {
+  id               Int              @id @default(autoincrement())
+  nombre           String
+  descripcion      String?
+  precio           Decimal
+  duracion_minutos Int?
+  admision_examenes AdmisionExamen[]
+  resultados       ResultadoExamen[]
+}
+
+model Admision {
+  id                  Int               @id @default(autoincrement())
+  paciente_id         Int
+  paciente            Paciente          @relation(fields: [paciente_id], references: [id])
+  empresa_id          Int?
+  empresa             Empresa?          @relation(fields: [empresa_id], references: [id])
+  usuario_registro_id Int?
+  usuario_registro    Usuario?          @relation(fields: [usuario_registro_id], references: [id])
+  fecha_admision      DateTime
+  motivo              String?
+  estado              String            @default("Pendiente")
+  total               Decimal?
+  examenes            AdmisionExamen[]
+  facturas            Factura[]
+  conceptos           ConceptoAptitud[]
+  created_at          DateTime          @default(now())
+}
+
+model AdmisionExamen {
+  id             Int                  @id @default(autoincrement())
+  admision_id    Int
+  admision       Admision             @relation(fields: [admision_id], references: [id])
+  tipo_examen_id Int
+  tipo_examen    TipoExamen           @relation(fields: [tipo_examen_id], references: [id])
+  fecha_programada DateTime
+  estado         String               @default("Programado")
+  medico_id      Int?
+  medico         Usuario?             @relation(fields: [medico_id], references: [id])
+  muestras       LaboratorioMuestra[]
+  logistica      LogisticaServicio?
+}
+
+model HistoriaClinica {
+  id                      Int                       @id @default(autoincrement())
+  paciente_id             Int
+  paciente                Paciente                  @relation(fields: [paciente_id], references: [id])
+  medico_id               Int?
+  medico                  Usuario?                  @relation(fields: [medico_id], references: [id])
+  fecha_consulta          DateTime
+  motivo_consulta         String?
+  antecedentes_personales String?
+  antecedentes_laborales  String?
+  examen_fisico           String?
+  diagnostico             String?
+  tratamiento             String?
+  observaciones           String?
+  adjuntos                HistoriaClinicaAdjunto[]
+  resultados_examen       ResultadoExamen[]
+}
+
+model HistoriaClinicaAdjunto {
+  id                  Int             @id @default(autoincrement())
+  historia_clinica_id Int
+  historia_clinica    HistoriaClinica @relation(fields: [historia_clinica_id], references: [id])
+  nombre_archivo      String
+  url_archivo         String
+  descripcion         String?
+}
+
+model ResultadoExamen {
+  id                  Int             @id @default(autoincrement())
+  historia_clinica_id Int
+  historia_clinica    HistoriaClinica @relation(fields: [historia_clinica_id], references: [id])
+  tipo_examen_id      Int
+  tipo_examen         TipoExamen      @relation(fields: [tipo_examen_id], references: [id])
+  resultado           Json?
+  conclusiones        String?
+}
+
+model LaboratorioMuestra {
+  id                 Int                    @id @default(autoincrement())
+  admision_examen_id Int?
+  admision_examen    AdmisionExamen?        @relation(fields: [admision_examen_id], references: [id])
+  codigo_muestra     String                 @unique
+  fecha_recepcion    DateTime
+  estado             String                 @default("Recibida")
+  resultados         LaboratorioResultado[]
+}
+
+model LaboratorioResultado {
+  id                  Int                @id @default(autoincrement())
+  muestra_id          Int
+  muestra             LaboratorioMuestra @relation(fields: [muestra_id], references: [id])
+  nombre_examen       String
+  resultado           String?
+  valores_referencia  String?
+  estado              String?
+  usuario_registro_id Int?
+  usuario_registro    Usuario?           @relation(fields: [usuario_registro_id], references: [id])
+}
+
+model ConceptoAptitud {
+  id              Int      @id @default(autoincrement())
+  admision_id     Int
+  admision        Admision @relation(fields: [admision_id], references: [id])
+  medico_id       Int?
+  medico          Usuario? @relation(fields: [medico_id], references: [id])
+  concepto        String
+  restricciones   String?
+  observaciones   String?
+  fecha_emision   DateTime
+  informe_pdf_url String?
+  estado          String   @default("Borrador")
+}
+
+model Factura {
+  id               Int      @id @default(autoincrement())
+  admision_id      Int
+  admision         Admision @relation(fields: [admision_id], references: [id])
+  numero_factura   String   @unique
+  fecha_emision    DateTime
+  fecha_vencimiento DateTime?
+  subtotal         Decimal
+  igv              Decimal
+  total            Decimal
+  estado           String   @default("Pendiente")
+  empresa_id       Int?
+  empresa          Empresa? @relation(fields: [empresa_id], references: [id])
+  pagos            Pago[]
+}
+
+model Pago {
+  id                  Int      @id @default(autoincrement())
+  factura_id          Int
+  factura             Factura  @relation(fields: [factura_id], references: [id])
+  monto               Decimal
+  fecha_pago          DateTime
+  metodo_pago         String
+  referencia          String?
+  usuario_registro_id Int?
+  usuario_registro    Usuario? @relation(fields: [usuario_registro_id], references: [id])
+}
+
+model CategoriaInventario {
+  id        Int                  @id @default(autoincrement())
+  nombre    String
+  productos ProductoInventario[]
+}
+
+model ProductoInventario {
+  id           Int                    @id @default(autoincrement())
+  categoria_id Int?
+  categoria    CategoriaInventario?   @relation(fields: [categoria_id], references: [id])
+  codigo       String                 @unique
+  nombre       String
+  stock_minimo Int                    @default(10)
+  stock_actual Int                    @default(0)
+  precio_unitario Decimal?
+  movimientos  MovimientoInventario[]
+}
+
+model MovimientoInventario {
+  id                  Int                @id @default(autoincrement())
+  producto_id         Int
+  producto            ProductoInventario @relation(fields: [producto_id], references: [id])
+  tipo_movimiento     String
+  cantidad            Int
+  motivo              String?
+  usuario_registro_id Int?
+  usuario_registro    Usuario?           @relation(fields: [usuario_registro_id], references: [id])
+  fecha_movimiento    DateTime           @default(now())
+}
+
+model LogisticaServicio {
+  id                 Int            @id @default(autoincrement())
+  admision_examen_id Int            @unique
+  admision_examen    AdmisionExamen @relation(fields: [admision_examen_id], references: [id])
+  estado             String         @default("Pendiente")
+  ubicacion_actual   String?
+  fecha_actualizacion DateTime      @default(now())
+}
+
+model LogSistema {
+  id             Int      @id @default(autoincrement())
+  usuario_id     Int?
+  usuario        Usuario? @relation(fields: [usuario_id], references: [id])
+  accion         String
+  tabla_afectada String?
+  registro_id    Int?
+  detalles       String?
+  ip_address     String?
+  fecha_registro DateTime @default(now())
+}
